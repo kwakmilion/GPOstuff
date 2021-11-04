@@ -54,6 +54,9 @@ class RegItem {
     [string]$uid
     [string]$Desc
     [string]$bypassErrors
+    [string]$bypassErrorsText
+    [string]$removePolicy
+    [string]$removePolicyText
     [int]$GPOSettingOrder
     [RegItemProp]$Properties
     #[filerss]$filers
@@ -71,27 +74,58 @@ class mojeGPO {
         $this.Name = $oXML.GPO.Name
         $this.ReadTime = $oXML.GPO.ReadTime
         $this.Details = [detailsGPO]::new($oXML)
-    
-        $oXML.GPO.Computer.ExtensionData.Extension.RegistrySettings | Select-Object -ExpandProperty Registry | Select-Object -Property * | ForEach-Object{
-            $tmp = New-Object -TypeName RegItem
-            $tmp.clsid = $_.clsid
-            $tmp.Name = $_.Name
-            $tmp.Status = $_.Status
-            $tmp.Image = $_.Image
-            $tmp.Changed = $_.Changed 
-            $tmp.uid = $_.uid
-            $tmp.Desc = $_.desc
-            $tmp.bypassErrors = $_.bypassErrors
-            $tmp.GPOSettingOrder = $_.GPOSettingOrder
+        $arrObje = $oXML.GPO.Computer.ExtensionData.Extension.RegistrySettings | Select-Object -ExpandProperty Registry | Select-Object -Property * 
+        
+        foreach ($i in $arrObje) {
             
-            $PropTmp = $_ | Select-Object -ExpandProperty Properties | Select-Object -Property *
+            $tmp = New-Object -TypeName RegItem
+            $tmp.clsid = $i.clsid
+            $tmp.Name = $i.Name
+            $tmp.Status = $i.Status
+            $tmp.Image = $i.Image
+            $tmp.Changed = $i.Changed 
+            $tmp.uid = $i.uid
+            $tmp.Desc = $i.desc
+            $tmp.bypassErrors = $i.bypassErrors
+            $tmp.removePolicy = $i.removePolicy
+
+            if ($tmp.bypassErrors -like "1") {
+                $tmp.bypassErrorsText = "No"
+            }
+            else {
+                $tmp.bypassErrorsText = "Yes"
+            }
+            
+            if ($tmp.removePolicy -like "1") {
+                $tmp.removePolicyText = "Yes"
+            }
+            else {
+                $tmp.removePolicyText = "No"
+            }
+
+            $tmp.GPOSettingOrder = $i.GPOSettingOrder
+            
+            $PropTmp = $i | Select-Object -ExpandProperty Properties | Select-Object -Property *
             $tmp.Properties = New-Object -TypeName RegItemProp
-            $tmp.Properties.Action = $PropTmp.Action
+            
+            switch ($PropTmp.Action) {
+                "C" { $tmp.Properties.Action = "Create"; break }
+                "D" { $tmp.Properties.Action = "Delete"; break }
+                "R" { $tmp.Properties.Action = "Replace"; break }
+                "U" { $tmp.Properties.Action = "Update"; break }
+                Default {$tmp.Properties.Action = "Update"; break }
+            }
+            
             $tmp.Properties.DisplayDecimal = $PropTmp.DisplayDecimal
             $tmp.Properties.default = $PropTmp.default
             $tmp.Properties.hive = $PropTmp.hive
             $tmp.Properties.key = $PropTmp.key
-            $tmp.Properties.Name = $PropTmp.Name
+            if ($PropTmp.default -like "1") {
+                $tmp.Properties.Name = "(Default)"
+            }
+            else {
+                $tmp.Properties.Name = $PropTmp.Name    
+            }
             $tmp.Properties.type = $PropTmp.type
             $tmp.Properties.value = $PropTmp.value
             $tmp.Properties.values = $PropTmp.values
