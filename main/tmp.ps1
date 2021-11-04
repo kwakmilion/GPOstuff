@@ -1,15 +1,19 @@
-. "$PSScriptRoot\support.ps1"
+. "$PSScriptRoot\classes\mojeGPO.ps1"
 
-$sXML1 = "$PSScriptRoot\testGPOreps\gpo1.xml"
+$sXML1 = "$PSScriptRoot\testGPOreps\gpo2.xml"
 $oXML1 = [xml]$(Get-Content -Path $sXML1)
 
-$oGPO1 = [GpoObj]::new($oXML1)
+$oGPO1 = [mojeGPO]::new($oXML1)
+
 $oGPO1
-#New-HTML -TitleText "GPO Difference Report"
+<# $ns = @{q1 = "http://www.microsoft.com/GroupPolicy/Settings/Windows/Registry"}
+$nodes = Select-Xml -Xml $oXML1 -Namespace $ns -XPath "//q1:RegistrySettings"| Select-Object -ExpandProperty Node
 
 
-<# $arrTE = @()
-$arrTE += $testXML1
-$arrTE += $testXML2 #>
-<# write-host $oXML1
-$arrTe|Out-HtmlView -Compare -ScrollX -HighlightDifferences #>
+foreach ($i in $nodes) {
+    $i.Collection
+} #>
+
+#$nodes2 = ($oXML1.GPO.Computer.ExtensionData.Extension.RegistrySettings.Registry) | Select-Object -ExpandProperty Properties
+<# $nodes2 = ($oXML1.GPO.Computer.ExtensionData.Extension.RegistrySettings) | Select-Object -ExpandProperty Registry | Sort-Object -Property GPOSettingOrder -Descending
+$nodes2 #>
